@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import os
 import sys
@@ -9,7 +9,7 @@ from reportlab.lib.colors import transparent
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 
-from PyPDF4 import PdfFileWriter, PdfFileReader
+from PyPDF4 import PdfFileWriter, PdfFileReader, pdf
 
 FORM_TEXT_SIZE_DEFAULT = 10
 FORM_TEXT_FONT_DEFAULT = 'Helvetica'
@@ -67,9 +67,9 @@ def date_field(name: str,
                x: float,
                y: float,
                flags: List = None) -> Tuple[TextField, TextField, TextField]:
-    date = TextField(f"{name}.day", x, y, 11, "день", flags)
-    month = TextField(f"{name}.month", x + 12.5, y, 27, "месяц", flags)
-    year = TextField(f"{name}.year", x + 41, y, 14, "год", flags)
+    date = TextField(f"{name}-day", x, y, 11, "день", flags)
+    month = TextField(f"{name}-month", x + 12.5, y, 27, "месяц", flags)
+    year = TextField(f"{name}-year", x + 41, y, 14, "год", flags)
 
     return date, month, year
 
@@ -115,8 +115,8 @@ def attach_form(original_document: str = 'original.pdf',
     result_size = max(original_size, form_size)
 
     for page_num in range(result_size):
-        original_page = None
-        form_page = None
+        original_page: Optional[pdf.PageObject] = None
+        form_page: Optional[pdf.PageObject] = None
 
         if page_num < original_size:
             original_page = original_reader.getPage(pageNumber=page_num)
@@ -134,6 +134,12 @@ def attach_form(original_document: str = 'original.pdf',
 
         result_writer.addPage(page)
 
+    # Copy AcroForm objects 'as-is' to the new document to make other frameworks able
+    # to see and fill form fields
+    result_writer._root_object.update({
+         pdf.NameObject("/AcroForm"): form_reader.trailer["/Root"]["/AcroForm"]
+    })
+
     with open(result_document, 'wb') as out:
         result_writer.write(out)
 
@@ -142,44 +148,44 @@ def create_and_attach_form(original_document: str,
                            result_document: str):
     form_config: List[List[TextField]] = [
         [
-            *date_field("contract.date", 131, 279.7),
-            TextField("contract.number", 164, 266, 20, 'номер договора'),
+            *date_field("contract-date", 131, 279.7),
+            TextField("contract-number", 164, 266, 20, 'номер договора'),
 
-            TextField("tenant.name", 61, 245.5, 126, 'ФИО Арендатора'),
+            TextField("tenant-name", 61, 245.5, 126, 'ФИО Арендатора'),
 
-            TextField("harp.name", 28, 199.1, 86.5, 'Название арфы'),
-            number_field("harp.strings_count", 116, 199.1),
-            TextField("harp.inventory_number", 152.5, 199.1, 27, "инвентарный номер"),
-            number_field("harp.keys_count", 63.7, 192.7),
-            number_field("harp.legs_count", 89.4, 186.2),
-            TextField("harp.additionals_1", 28, 179.7, 150, "любая дополнительная информация"),
-            TextField("harp.additionals_2", 28, 173.2, 150, "любая дополнительная информация"),
-            number_field("harp.contract.number", 73.7, 156.5, tooltip="номер договора"),
-            *date_field("harp.contract.date", 90, 156.5),
-            TextField("harp.price.digits", 74, 145, 115, "стоимость числом"),
-            TextField("harp.price.text", 29, 140, 145, "стоимость прописью"),
+            TextField("harp-name", 28, 199.1, 86.5, 'Название арфы'),
+            number_field("harp-strings_count", 116, 199.1),
+            TextField("harp-inventory_number", 152.5, 199.1, 27, "инвентарный номер"),
+            number_field("harp-keys_count", 63.7, 192.7),
+            number_field("harp-legs_count", 89.4, 186.2),
+            TextField("harp-additionals_1", 28, 179.7, 150, "любая дополнительная информация"),
+            TextField("harp-additionals_2", 28, 173.2, 150, "любая дополнительная информация"),
+            number_field("harp-contract-number", 73.7, 156.5, tooltip="номер договора"),
+            *date_field("harp-contract-date", 90, 156.5),
+            TextField("harp-price-digits", 74, 145, 115, "стоимость числом"),
+            TextField("harp-price-text", 29, 140, 145, "стоимость прописью"),
         ],
         [
-            number_field("contract.payment.date", 25.5, 156.5),
-            TextField("contract.payment.digits", 25.5, 151.4, 41, "сумма числом"),
-            TextField("contract.payment.text", 68.8, 151.4, 119, "сумма прописью"),
-            TextField("contract.insurance.digits", 122.8, 134.8, 66, "сумма числом"),
-            TextField("contract.insurance.text", 27.5, 129.6, 147, "сумма прописью"),
+            number_field("contract-payment-date", 25.5, 156.5),
+            TextField("contract-payment-digits", 25.5, 151.4, 41, "сумма числом"),
+            TextField("contract-payment-text", 68.8, 151.4, 119, "сумма прописью"),
+            TextField("contract-insurance-digits", 122.8, 134.8, 66, "сумма числом"),
+            TextField("contract-insurance-text", 27.5, 129.6, 147, "сумма прописью"),
         ],
         [
-            *date_field("contract.end_date", 123.7, 51.1),
+            *date_field("contract-end_date", 123.7, 51.1),
         ],
         [
-            TextField("tenant_info.surname", 122.5, 160.3, 63.4, "Фамилия"),
-            TextField("tenant_info.name", 122.5, 155.3, 63.4, "Имя"),
-            TextField("tenant_info.parent_name", 122.5, 150.3, 63.4, "Отчество"),
-            TextField("tenant_info.registration", 112, 127.6, 75, "Адрес регистрации",
+            TextField("tenant_info-surname", 122.5, 160.3, 63.4, "Фамилия"),
+            TextField("tenant_info-name", 122.5, 155.3, 63.4, "Имя"),
+            TextField("tenant_info-parent_name", 122.5, 150.3, 63.4, "Отчество"),
+            TextField("tenant_info-registration", 112, 127.6, 75, "Адрес регистрации",
                       flags=[FIELD_FLAG_MULTILINE], height=51, maxlen=400),
-            number_field("tenant_info.passport.series", 138.7, 122.5, tooltip='серия'),
-            number_field("tenant_info.passport.number", 153.6, 122.5, 33, tooltip='номер'),
-            TextField("tenant_info.passport.issuer", 112, 99.7, 75, "Адрес регистрации",
+            number_field("tenant_info-passport-series", 138.7, 122.5, tooltip='серия'),
+            number_field("tenant_info-passport-number", 153.6, 122.5, 33, tooltip='номер'),
+            TextField("tenant_info-passport-issuer", 112, 99.7, 75, "Адрес регистрации",
                       flags=[FIELD_FLAG_MULTILINE], height=51, maxlen=400),
-            *date_field("tenant_info.passport.issue_date", 129, 89.6),
+            *date_field("tenant_info-passport-issue_date", 129, 89.6),
         ]
     ]
 
