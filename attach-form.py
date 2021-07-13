@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from typing import List, Tuple, Optional
 
 import os
@@ -50,6 +52,10 @@ class Form:
         if flags is None:
             flags = [FIELD_FLAG_NO_SCROLL]
 
+        border_width = 0
+        if os.environ.get("ATTACH_FORM_DEBUG", "0") == "1":
+            border_width = 1
+
         self.form.textfield(name=field.name,
                             tooltip=field.tooltip,
                             x=field.x * mm,
@@ -58,7 +64,7 @@ class Form:
                             height=field.height,
                             maxlen=field.maxlen,
                             fillColor=transparent,
-                            borderWidth=0,
+                            borderWidth=border_width,
                             fontName=FORM_FONT_NAME_DEFAULT,
                             fontSize=field.font_size,
                             fieldFlags=' '.join(flags),
@@ -199,10 +205,10 @@ def create_and_attach_form(original_document: str,
         ],
         [
             number_field("contract-payment-day", 25.5, 156.6),
-            TextField("contract-payment-digits", 25.5, 151.5, 41, "сумма числом"),
-            TextField("contract-payment-text", 68.8, 151.5, 119, "сумма прописью"),
-            TextField("contract-insurance-digits", 122.8, 134.8, 66, "сумма числом"),
-            TextField("contract-insurance-text", 27.5, 129.7, 147, "сумма прописью"),
+            TextField("contract-payment-digits", 25.5, 151.5, 25.5, "сумма числом"),
+            TextField("contract-payment-text", 65.8, 151.5, 119, "сумма прописью"),
+            TextField("contract-insurance-digits", 122.8, 139.8, 45, "сумма числом"),
+            TextField("contract-insurance-text", 27.5, 134.7, 157, "сумма прописью"),
         ],
         [
             *date_field("contract-end_date", 123.7, 70.2),

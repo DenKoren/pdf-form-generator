@@ -1,7 +1,8 @@
+#!/usr/bin/env python
+
 from typing import Dict, Optional
 
 import sys
-from datetime import date
 import yaml
 
 import pdfrw
