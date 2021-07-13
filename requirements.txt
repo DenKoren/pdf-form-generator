@@ -1,3 +1,4 @@
+pdfrw==0.4
 Pillow==8.3.1
 PyPDF4==1.27.0
 reportlab==3.5.68
