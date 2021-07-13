@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 import sys
 from datetime import date
-import json
+import yaml
 
 import pdfrw
 
@@ -11,9 +11,9 @@ import const
 
 def read_values(values_file_path: str) -> Dict:
     with open(values_file_path) as f:
-        field_values: Dict = json.load(f)
+        data: Dict = yaml.safe_load(f)
 
-    return field_values
+    return data.get('field_values', {})
 
 
 def fill_pdf(input_pdf_path, output_pdf_path, field_values: Optional[Dict] = None):
