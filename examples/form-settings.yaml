@@ -1,0 +1,54 @@
+# Script expects the full form configuration to be located inside 'form_settings' key
+form_settings:
+  # Custom field types. You can set here default values for fields.
+  # They will be used when the field has no it's own value with the same key
+  types:
+    # Type 'default' has the special meaning. It is used as base type for all other types and fields when they have no
+    # 'type' key set.
+    # This means, all our fields will have maxlen=100, height=15, font_size=10, ... by default.
+    default: { h: 15, maxlen: 100, font_size: 10, font_name: 'Helvetica', flags: ['doNotScroll'] }
+
+    # Since the 'number' field has no 'type' set, script will use 'default' as parent type
+    number: { w: 11, tooltip: "put a number here" }
+
+  # Field groups are packs of fields that can be put at the given location all at once.
+  # When group is placed on page, the 'x' and 'y' of the group are added to all fields inside the group
+  # and the group name is prepended to each field's name of the group with the '-' delimiter:
+  #   "{group_name}-{field_name}"
+  groups:
+    date:
+      - { name: "day", x: 0, y: 0, w: 11, tooltip: "day", type: number }
+      - { name: "month", x: 12.5, y: 0, w: 27, tooltip: "month", type: number }
+      - { name: "year", x: 41, y: 0, w: 14, tooltip: "year", type: number }
+
+    client_info:
+      - { name: "surname", x: 16, y: 0, w: 58.5, tooltip: "Surname" }
+      - { name: "name", x: 16, y: -5, w: 58.5, tooltip: "Name" }
+
+        # You can use groups inside other groups.
+        # Recursion is not allowed.
+      - { name: "birth", x: 16, y: -10, group: date }
+
+  # Forms keep final form field configurations. Each configuration has its name
+  forms:
+    my_awesome_form:
+      # Each form has a list of pages and a list of fields on each page
+      # Here are the page 1 fields:
+      - - { name: "contract-number", x: 123.8, y: 265.7, w: 32, h: 18, tooltip: 'contract number', font_size: 16, type: number }
+
+        # The group's 'x' and 'y' will be added to group's fields coordinates.
+        # The group's name will be prepended to group's field names.
+        # So we get here 3 fields: 'contract-date-day', 'contract-date-month' and 'contract-date-year'
+        - { name: "contract-date", x: 131, y: 279.9, group: date }
+
+      # Here are the page 2 fields
+      - - { name: "contract-payment-digits", x: 27, y: 261.5, w: 24, tooltip: "amount in digits" }
+        - { name: "contract-payment-text", x: 65.8, y: 261.5, w: 119, tooltip: "amount in text" }
+
+      # Here are the page 3 fields
+      - - { name: "additional_agreements", x: 20, y: 242.5, w: 168, h: 51, tooltip: "additional agreements", flags: ["multiline"] }
+        - { name: "customer", x: 112, y: 211.5, group: client_info }
+        - { name: "signature_date", x: 129, y: 186, group: date }
+
+    my_another_form:
+      - - { tooltip: "..." }

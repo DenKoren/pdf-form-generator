@@ -1,0 +1,30 @@
+# Script expects all form field values to be located inside `field_values` key
+field_values:
+    # The simple key->value, where 'key' is the name of the field and 'value' is its value:
+
+    contract-number: c-130721-1
+
+    # That's how our 'date' group from the 'form-settings.yaml' example expanded
+    contract-date-day: 13
+    contract-date-month: july
+    contract-date-year: 2021
+
+    contract-payment-digits: 0
+    contract-payment-text:  zero dollars and 00 cents
+
+    customer-surname: Lazy
+    customer-name: John
+
+    additional_agreements: |
+        Some multiline text here
+        To fit the lines in form, just adjust the font size of the field
+        when you create it.
+
+    # That's how our group inside group ('client_info' -> 'date') from the 'form-settings.yaml' example expanded
+    customer-birth-day: 30
+    customer-birth-month: January
+    customer-birth-year: 2001
+
+    signature_date-day: 10
+    signature_date-month: February
+    signature_date-year: 2021

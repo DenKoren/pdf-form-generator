@@ -3,21 +3,17 @@
 from typing import Dict, Optional, Union, BinaryIO, AnyStr
 
 import sys
-import yaml
-
 import pdfrw
 
-import const
+from core import const
+from core.settings import FieldValues
 
 
-def read_values(values: Union[BinaryIO, AnyStr]) -> Dict:
+def read_values(values: Union[BinaryIO, AnyStr]) -> FieldValues:
     if type(values) is str or type(values) is bytes:
-        with open(values) as f:
-            data: Dict = yaml.safe_load(f)
-    else:
-        data: Dict = yaml.safe_load(values)
+        return FieldValues.from_file(values)
 
-    return data.get('field_values', {})
+    return FieldValues.from_stream(values)
 
 
 def fill_pdf(input_pdf, field_values: Optional[Dict] = None, output_pdf: Union[BinaryIO, AnyStr] = sys.stdout):
@@ -42,32 +38,39 @@ def fill_pdf(input_pdf, field_values: Optional[Dict] = None, output_pdf: Union[B
 
                 if type(value) == bool:
                     if value:
-                        annotation.update(pdfrw.PdfDict(
-                            AS=pdfrw.PdfName('Yes')))
+                        annotation.update(
+                            pdfrw.PdfDict(AS=pdfrw.PdfName('Yes'))
+                        )
                 else:
                     annotation.update(
-                        pdfrw.PdfDict(V=str(value))
+                        pdfrw.PdfDict(
+                            V=str(value),
+                            AP=''
+                        )
                     )
-                    annotation.update(pdfrw.PdfDict(AP=''))
 
-    template_pdf.Root.AcroForm.update(pdfrw.PdfDict(NeedAppearances=pdfrw.PdfObject('true')))  # NEW
+    template_pdf.Root.AcroForm.update(pdfrw.PdfDict(NeedAppearances=pdfrw.PdfObject('true')))
     pdfrw.PdfWriter().write(output_pdf, template_pdf)
 
 
-pdf_form = sys.argv[1]
-form_values = sys.stdin
-if len(sys.argv) >= 3:
-    form_values = sys.argv[2]
-    if form_values == '-':
-        form_values = sys.stdin
+def main():
+    pdf_form = sys.argv[1]
+    if pdf_form == '-':
+        pdf_form = sys.stdin
 
-pdf_output = sys.stdout.buffer
-if len(sys.argv) >= 4:
-    pdf_output = sys.argv[3]
-    if pdf_output == '-':
-        pdf_output = sys.stdout.buffer
+    values_source = sys.stdin
+    if len(sys.argv) > 2 and sys.argv[2] != '-':
+        values_source = sys.argv[2]
 
-data_dict = read_values(form_values)
-fill_pdf(input_pdf=pdf_form,
-         field_values=data_dict,
-         output_pdf=pdf_output)
+    pdf_output = sys.stdout.buffer
+    if len(sys.argv) > 3 and sys.argv[3] != '-':
+        pdf_output = sys.argv[3]
+
+    field_values = read_values(values_source)
+    fill_pdf(input_pdf=pdf_form,
+             field_values=field_values.data,
+             output_pdf=pdf_output)
+
+
+if __name__ == '__main__':
+    main()

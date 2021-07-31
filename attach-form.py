@@ -1,127 +1,24 @@
 #!/usr/bin/env python
 
-from typing import List, Tuple, Optional
+from typing import Optional
 
 import os
 import sys
 
 from reportlab.pdfgen import canvas
-from reportlab.pdfbase import acroform
 from reportlab.lib.colors import transparent
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 
 from PyPDF4 import PdfFileWriter, PdfFileReader, pdf
 
-FORM_FONT_SIZE_DEFAULT = 10
-FORM_FONT_NAME_DEFAULT = 'Helvetica'
+from core.settings import FormSettings
 
 FIELD_FLAG_MULTILINE = 'multiline'
 FIELD_FLAG_NO_SCROLL = 'doNotScroll'
 
 
-class TextField:
-    def __init__(self,
-                 name: str,
-                 x: float,
-                 y: float,
-                 width: float,
-                 tooltip: str = '',
-                 flags: List = None,
-                 height: float = FORM_FONT_SIZE_DEFAULT * 1.5,
-                 maxlen: int = 100,
-                 font_size: int = FORM_FONT_SIZE_DEFAULT
-                 ):
-        self.name: str = name
-        self.x: float = x
-        self.y: float = y
-        self.width: float = width
-        self.tooltip: str = tooltip
-        self.flags: List = flags
-        self.height: float = height
-        self.maxlen: int = maxlen
-        self.font_size: int = font_size
-
-
-class Form:
-    def __init__(self, form: acroform.AcroForm):
-        self.form: acroform.AcroForm = form
-
-    def add_text(self, field: TextField):
-        flags = field.flags
-        if flags is None:
-            flags = [FIELD_FLAG_NO_SCROLL]
-
-        border_width = 0
-        if os.environ.get("ATTACH_FORM_DEBUG", "0") == "1":
-            border_width = 1
-
-        self.form.textfield(name=field.name,
-                            tooltip=field.tooltip,
-                            x=field.x * mm,
-                            y=field.y * mm,
-                            width=field.width * mm,
-                            height=field.height,
-                            maxlen=field.maxlen,
-                            fillColor=transparent,
-                            borderWidth=border_width,
-                            fontName=FORM_FONT_NAME_DEFAULT,
-                            fontSize=field.font_size,
-                            fieldFlags=' '.join(flags),
-                            )
-
-
-def date_field(name: str,
-               x: float,
-               y: float,
-               flags: List = None) -> Tuple[TextField, TextField, TextField]:
-    date = TextField(f"{name}-day", x, y, 11, "день", flags)
-    month = TextField(f"{name}-month", x + 12.5, y, 27, "месяц", flags)
-    year = TextField(f"{name}-year", x + 41, y, 14, "год", flags)
-
-    return date, month, year
-
-
-def number_field(name: str,
-                 x: float,
-                 y: float,
-                 width: float = 11,
-                 tooltip: str = "число",
-                 flags: List = None):
-    return TextField(name, x, y, width, tooltip, flags)
-
-
-def tenant_info(x: float,
-                y: float):
-    surname = TextField("tenant_info-surname", x+10.5, y, 63.4, "Фамилия"),
-    name = TextField("tenant_info-name", x+10.5, y-5, 63.4, "Имя"),
-    parent_name = TextField("tenant_info-parent_name", x+10.5, y-10, 63.4, "Отчество"),
-    birth = TextField("tenant_info-birth", x+27.5, y-15, 46.4, "дата"),
-
-    registration = TextField("tenant_info-registration", x, y-37.9, 75, "Адрес регистрации",
-                             flags=[FIELD_FLAG_MULTILINE], height=51, maxlen=400),
-
-    id_series = number_field("tenant_info-passport-series", x+26.7, y-43, tooltip='серия'),
-    id_number = number_field("tenant_info-passport-number", x+41.6, y-43, 33, tooltip='номер'),
-    id_issuer = TextField("tenant_info-passport-issuer", x, y-65.8, 75, "Адрес регистрации",
-                          flags=[FIELD_FLAG_MULTILINE], height=51, maxlen=400),
-    id_issue_date = *date_field("tenant_info-passport-issue_date", x+17, y-75.9),
-
-    signature_date = *date_field("tenant_info-signature-date", x+17, y-91.4),
-
-    return (*surname,
-            *name,
-            *parent_name,
-            *birth,
-            *registration,
-            *id_series,
-            *id_number,
-            *id_issuer,
-            *id_issue_date,
-            *signature_date)
-
-
-def create_form(pages: List[List[TextField]], filename: str = 'simple_form.pdf'):
+def create_form(settings: FormSettings, form_name: str, filename: str = 'simple_form.pdf'):
     c = canvas.Canvas(
         filename=filename,
         pagesize=A4,
@@ -129,11 +26,29 @@ def create_form(pages: List[List[TextField]], filename: str = 'simple_form.pdf')
 
     c.setFont("Helvetica", 10)
 
-    form = Form(c.acroForm)
+    default_border_width = 0
+    if os.environ.get("ATTACH_FORM_DEBUG", "0") == "1":
+        default_border_width = 1
 
-    for page in pages:
-        for field in page:
-            form.add_text(field)
+    form_fields_settings = settings.form(form_name)
+    form = c.acroForm
+
+    for page_fields in form_fields_settings:
+        for field in page_fields:
+            form.textfield(
+                name=field.name,
+                tooltip=field.tooltip,
+                x=field.x * mm,
+                y=field.y * mm,
+                width=field.w * mm,
+                height=field.h,
+                maxlen=field.maxlen,
+                fillColor=transparent,
+                borderWidth=field.border_width if field.border_width else default_border_width,
+                fontName=field.font_name,
+                fontSize=field.font_size,
+                fieldFlags=' '.join(field.flags),
+            )
 
         c.showPage()
 
@@ -182,63 +97,37 @@ def attach_form(original_document: str = 'original.pdf',
         result_writer.write(out)
 
 
-def create_and_attach_form(original_document: str,
+def create_and_attach_form(settings: FormSettings,
+                           form_name: str,
+                           original_document: str,
                            result_document: str):
-    form_config: List[List[TextField]] = [
-        [
-            *date_field("contract-date", 131, 279.9),
-            TextField("contract-number", 156.8, 265.7, 32, 'номер договора', height=18, font_size=16),
-
-            TextField("tenant-name", 61, 245.9, 126, 'ФИО Арендатора'),
-
-            TextField("harp-name", 28, 199.3, 86.5, 'Название арфы'),
-            number_field("harp-strings_count", 127.5, 199.3),
-            TextField("harp-inventory_number", 153.5, 199.3, 27, "инвентарный номер"),
-            number_field("harp-keys_count", 63.7, 192.8),
-            number_field("harp-legs_count", 89.4, 186.4),
-            TextField("harp-additionals_1", 28, 179.75, 152, "любая дополнительная информация"),
-            TextField("harp-additionals_2", 28, 173.35, 152, "любая дополнительная информация"),
-            number_field("harp-contract-number", 73.7, 156.7, tooltip="номер договора", width=20),
-            *date_field("harp-contract-date", 99, 156.7),
-            TextField("harp-price-digits", 74, 145.2, 115, "стоимость числом"),
-            TextField("harp-price-text", 29, 140.1, 145, "стоимость прописью"),
-        ],
-        [
-            number_field("contract-payment-day", 25.5, 156.6),
-            TextField("contract-payment-digits", 25.5, 151.5, 25.5, "сумма числом"),
-            TextField("contract-payment-text", 65.8, 151.5, 119, "сумма прописью"),
-            TextField("contract-insurance-digits", 122.8, 139.8, 45, "сумма числом"),
-            TextField("contract-insurance-text", 27.5, 134.7, 157, "сумма прописью"),
-        ],
-        [
-            *date_field("contract-end_date", 123.7, 70.2),
-        ],
-        [
-            TextField("contract-additionals", 19.5, 160, 168, "дополнительные условия договора",
-                      flags=[FIELD_FLAG_MULTILINE], height=51),
-
-            *date_field("renter-signature-date", 38, 37.9),
-
-            *tenant_info(112, 129.3)
-        ]
-    ]
 
     form_file = os.path.join(os.path.dirname(result_document), "form.pdf")
-
-    create_form(pages=form_config, filename=form_file)
+    create_form(settings, form_name, form_file)
     attach_form(original_document=original_document, form=form_file, result_document=result_document)
 
     os.remove(form_file)
 
 
-if __name__ == '__main__':
+def main():
+    settings_file = sys.argv[1]
+    form_settings = FormSettings.from_file(settings_file)
+
+    form_name = sys.argv[2]
+
     document = "./example.pdf"
-    if len(sys.argv) >= 1:
-        document = sys.argv[1]
+    if len(sys.argv) > 3:
+        document = sys.argv[3]
 
     result = "./result.pdf"
-    if len(sys.argv) >= 2:
-        result = sys.argv[2]
+    if len(sys.argv) > 4:
+        result = sys.argv[4]
 
-    create_and_attach_form(document, result)
+    create_and_attach_form(settings=form_settings,
+                           form_name=form_name,
+                           original_document=document,
+                           result_document=result)
 
+
+if __name__ == '__main__':
+    main()
