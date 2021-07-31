@@ -7,7 +7,9 @@ Here is the pack of two scripts:
 2. Simple PDF form filler script that fills form fields with values
 
 
-## Installation
+## Quick start
+
+### Get the scripts and init the environment
 ```shell script
 # Clone this repository
 git clone https://github.com/DenKoren/pdf-form-generator.git
@@ -24,8 +26,12 @@ pip install --upgrade pip
 
 # Install the requirements
 pip install -r ./requirements.txt
+```
 
-# Now you're ready to run the scripts
+### Use the examples to generate first PDF form
+```shell script
+./attach-form.py ./examples/form-settings.yaml my_awesome_form ./examples/document.pdf ./examples/form.pdf
+./fill-form.py ./examples/form.pdf ./examples/field-values.yaml ./examples/filled.pdf
 ```
 
 ## attach-form.py
