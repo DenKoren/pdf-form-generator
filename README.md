@@ -193,3 +193,18 @@ field_values:
     signature_date-year: 2021
 
 ```
+
+## Make the binary out of script
+If you want to run the script for web requests (for example, to generate PDF forms on demand for your users), you can
+compile the form generator and filler scripts into binaries:
+
+```shell script
+cd 'pdf-form-generator'
+python3 -m venv ./venv
+source ./venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install pyinstaller
+./venv/bin/pyinstaller -F fill-form.py  # creates executable binary in ./dist
+./venv/bin/pyinstaller -F attach-form.py  # creates executable binary in ./dist
+```
