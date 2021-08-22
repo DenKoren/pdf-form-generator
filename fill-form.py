@@ -22,7 +22,8 @@ def fill_pdf(input_pdf, field_values: Optional[Dict] = None, output_pdf: Union[B
 
     template_pdf = pdfrw.PdfReader(input_pdf)
     for page in template_pdf.pages:
-        annotations = page[const.KEY_ANNOTATIONS]
+        annotations = page.get(const.KEY_ANNOTATIONS, [])
+
         for annotation in annotations:
             if annotation[const.KEY_SUBTYPE] == const.SUBTYPE_WIDGET:
 
