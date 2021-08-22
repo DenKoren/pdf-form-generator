@@ -215,11 +215,14 @@ class FormSettings:
 
         return 'form' in item
 
-    def _expand_form(self, form_link: Dict) -> TypeForm:
+    def _expand_form(self, form_link: Dict, parsed_forms: Dict[str, TypeForm] = None) -> TypeForm:
+        if parsed_forms is None:
+            parsed_forms = self._forms
+
         form_name: str = form_link['form']
         page_num: Optional[int] = form_link.get('page', None)
 
-        form: TypeForm = self._forms[form_name]
+        form: TypeForm = parsed_forms[form_name]
         if page_num is not None:
             return [form[page_num]]
 
@@ -281,7 +284,7 @@ class FormSettings:
                 item: Optional[Dict] = page[0] if len(page) > 0 else None
 
                 if self._is_form_link(item):
-                    parsed_form_settings += self._expand_form(item)
+                    parsed_form_settings += self._expand_form(item, parsed_forms)
                     continue
 
                 parsed_form_settings.append(
