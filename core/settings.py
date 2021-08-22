@@ -2,6 +2,8 @@ from typing import List, Optional, Dict, Union, BinaryIO, TextIO, AnyStr, Any
 
 import yaml
 
+from .exception import FormNotFound
+
 
 class FormField:
     def __init__(self,
@@ -150,7 +152,8 @@ class FormGroup:
 
 class FormSettings:
     def __init__(self, settings: Dict):
-        self._raw_settings = settings
+        self._raw_settings: Dict = settings
+        self._settings_file: str = ''
 
         self._field_types: Dict[str, FormField] = self._parse_field_types(settings)
         self._field_groups: Dict[str, FormGroup] = self._parse_field_groups(settings)
@@ -164,7 +167,9 @@ class FormSettings:
     @staticmethod
     def from_file(yaml_file_path: AnyStr) -> 'FormSettings':
         with open(yaml_file_path, 'rb') as f:
-            return FormSettings.from_stream(f)
+            s = FormSettings.from_stream(f)
+            s._settings_file = yaml_file_path
+            return s
 
     @staticmethod
     def _parse_field_types(_raw_settings: Dict) -> Dict[str, FormField]:
@@ -324,6 +329,9 @@ class FormSettings:
         return self.add_field_group(group_name, None)
 
     def form(self, form_name: str) -> List[List[FormField]]:
+        if form_name not in self._forms:
+            raise FormNotFound(name=form_name, file_path=self._settings_file)
+
         return self._forms[form_name]
 
 
