@@ -93,6 +93,11 @@ class FormField:
         return self._field_type
 
 
+TypeFieldGroup = List[FormField]
+TypeFormPage = List[FormField]
+TypeForm = List[TypeFormPage]
+
+
 class FormGroup:
     def __init__(self, fields: Optional[List[FormField]] = None):
         if fields is None:
@@ -149,7 +154,7 @@ class FormSettings:
 
         self._field_types: Dict[str, FormField] = self._parse_field_types(settings)
         self._field_groups: Dict[str, FormGroup] = self._parse_field_groups(settings)
-        self._forms: Dict[str, List[List[FormField]]] = self._parse_forms(settings)
+        self._forms: Dict[str, TypeForm] = self._parse_forms(settings)
 
     @staticmethod
     def from_stream(yaml_data: Union[BinaryIO, TextIO]) -> 'FormSettings':
@@ -196,12 +201,29 @@ class FormSettings:
         field_type: FormField = self._field_types[type_name]
         return FormField(**field_settings, field_type=field_type)
 
-    def _expand_group(self, group_settings: Dict) -> List[FormField]:
+    def _expand_group(self, group_settings: Dict) -> TypeFieldGroup:
         group_name: str = group_settings['group']
         group_settings.pop('group', None)
 
         group: FormGroup = self._field_groups[group_name]
         return group.expand(**group_settings)
+
+    @staticmethod
+    def _is_form_link(item: Optional[Dict]) -> bool:
+        if item is None:
+            return False
+
+        return 'form' in item
+
+    def _expand_form(self, form_link: Dict) -> TypeForm:
+        form_name: str = form_link['form']
+        page_num: Optional[int] = form_link.get('page', None)
+
+        form: TypeForm = self._forms[form_name]
+        if page_num is not None:
+            return [form[page_num]]
+
+        return form
 
     def _parse_field_groups(self, raw_settings: Dict) -> Dict[str, FormGroup]:
         field_groups: Dict[str, List[Dict]] = raw_settings.get('groups', {})
@@ -234,7 +256,7 @@ class FormSettings:
 
         return parsed_field_groups
 
-    def _parse_page(self, page_settings: List[Dict]) -> List[FormField]:
+    def _parse_page(self, page_settings: List[Dict]) -> TypeFormPage:
         parsed_page_settings: List[FormField] = []
 
         for field_settings in page_settings:
@@ -247,7 +269,7 @@ class FormSettings:
 
         return parsed_page_settings
 
-    def _parse_forms(self, raw_settings: Dict) -> Dict[str, List[List[FormField]]]:
+    def _parse_forms(self, raw_settings: Dict) -> Dict[str, TypeForm]:
         forms: Dict[str, List[List[Dict]]] = raw_settings.get('forms', {})
 
         parsed_forms: Dict[str, List[List[FormField]]] = {}
@@ -256,6 +278,12 @@ class FormSettings:
             parsed_form_settings: List[List[FormField]] = []
 
             for page in form_settings:
+                item: Optional[Dict] = page[0] if len(page) > 0 else None
+
+                if self._is_form_link(item):
+                    parsed_form_settings += self._expand_form(item)
+                    continue
+
                 parsed_form_settings.append(
                     self._parse_page(page)
                 )
