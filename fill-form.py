@@ -20,9 +20,12 @@ def fill_pdf(input_pdf, field_values: Optional[Dict] = None, output_pdf: Union[B
     if field_values is None:
         field_values = {}
 
-    template_pdf = pdfrw.PdfReader(input_pdf)
+    template_pdf: pdfrw.PdfReader = pdfrw.PdfReader(input_pdf)
+    page: pdfrw.PdfDict
     for page in template_pdf.pages:
-        annotations = page.get(const.KEY_ANNOTATIONS, [])
+        annotations: Optional[pdfrw.PdfArray] = page[const.KEY_ANNOTATIONS]
+        if annotations is None:
+            continue
 
         for annotation in annotations:
             if annotation[const.KEY_SUBTYPE] == const.SUBTYPE_WIDGET:
