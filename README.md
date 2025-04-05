@@ -34,13 +34,22 @@ pip install -r ./requirements.txt
 ./fill-form.py ./examples/form.pdf ./examples/field-values.yaml ./examples/filled.pdf
 ```
 
+## pdf-form.py
+Universal entry point to all supported scripts.
+```shell script
+./pdf-form.py attach   # == ./attach-form.py
+./pdf-form.py fill ... # == ./fill-form.py
+...
+```
+
 ## attach-form.py
 This script generates PDF file with plain form (fields only, no visible text)
 and merges it with the given original PDF file with text.
 
 ### Usage
 ```shell script
-./attach-form.py '<form-settings.yaml>' '<form-name>' '<Document.pdf>' '<Result-with-fields.pdf>'
+./attach-form.py --help
+./attach-form.py [--debug] '<form-settings.yaml>' '<form-name>' '<Document.pdf>' ['<Result-with-fields.pdf>']
 ```
 
 ```shell script
