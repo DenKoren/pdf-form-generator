@@ -33,6 +33,28 @@ def _add_form_to_file(
         )
 
 
+@click.command(name="create")
+@click.option(
+    "--debug",
+    is_flag=True,
+    help="Debug mode. Makes all inputs to be visible and contain IDs.",
+)
+@click.argument("form_definitions", required=True, type=click.Path(exists=True))
+@click.argument("form_name", required=True, type=str)
+@click.argument(
+    "form_file", required=False, type=click.Path(exists=False), default="form.pdf"
+)
+@click.help_option("--help", "-h", help="Show this message and exit.")
+def create(form_definitions, form_name, form_file, debug):
+    """Create an empty PDF form form form definitions file.
+
+    This file can then be merged with another existing PDF with text to get fillable PDF file.
+    """
+    settings = FormSettings.from_file(form_definitions)
+
+    create_form(settings, form_name, form_file, debug)
+
+
 @click.command(name="attach")
 @click.option(
     "--debug",
@@ -61,7 +83,7 @@ def attach(form_definitions, form_name, original_document, result_document, debu
         result_document=result_document,
         debug=debug,
     )
-    
+
 
 def read_values(values: Union[BinaryIO, AnyStr]) -> FieldValues:
     if type(values) is str or type(values) is bytes:
@@ -98,4 +120,3 @@ def fill(pdf_form, values_source, pdf_output):
 
     field_values = read_values(values_source)
     fill_form(input_pdf=pdf_form, field_values=field_values.data, output_pdf=pdf_output)
-

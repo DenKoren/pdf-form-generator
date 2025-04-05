@@ -10,6 +10,7 @@ from PyPDF4 import PdfFileWriter, PdfFileReader, pdf
 from core import const
 from core.settings import FormSettings
 
+
 def create_form(
     settings: FormSettings,
     form_name: str,
