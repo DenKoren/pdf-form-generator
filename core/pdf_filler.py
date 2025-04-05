@@ -4,7 +4,12 @@ import pdfrw
 
 from core import const
 
-def fill_pdf(input_pdf, field_values: Optional[Dict] = None, output_pdf: Union[BinaryIO, AnyStr] = None):
+
+def fill_pdf(
+    input_pdf,
+    field_values: Optional[Dict] = None,
+    output_pdf: Union[BinaryIO, AnyStr] = None,
+):
     if field_values is None:
         field_values = {}
 
@@ -22,7 +27,9 @@ def fill_pdf(input_pdf, field_values: Optional[Dict] = None, output_pdf: Union[B
                 if annotation_name is None:
                     continue
 
-                annotation_name = annotation_name.decode()  # restore original annotation name to make comparison work
+                annotation_name = (
+                    annotation_name.decode()
+                )  # restore original annotation name to make comparison work
                 value = field_values.get(annotation_name)
 
                 if value is None:
@@ -30,16 +37,11 @@ def fill_pdf(input_pdf, field_values: Optional[Dict] = None, output_pdf: Union[B
 
                 if type(value) == bool:
                     if value:
-                        annotation.update(
-                            pdfrw.PdfDict(AS=pdfrw.PdfName('Yes'))
-                        )
+                        annotation.update(pdfrw.PdfDict(AS=pdfrw.PdfName("Yes")))
                 else:
-                    annotation.update(
-                        pdfrw.PdfDict(
-                            V=str(value),
-                            AP=''
-                        )
-                    )
+                    annotation.update(pdfrw.PdfDict(V=str(value), AP=""))
 
-    template_pdf.Root.AcroForm.update(pdfrw.PdfDict(NeedAppearances=pdfrw.PdfObject('true')))
-    pdfrw.PdfWriter().write(output_pdf, template_pdf) 
+    template_pdf.Root.AcroForm.update(
+        pdfrw.PdfDict(NeedAppearances=pdfrw.PdfObject("true"))
+    )
+    pdfrw.PdfWriter().write(output_pdf, template_pdf)

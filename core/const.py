@@ -1,8 +1,8 @@
-KEY_ANNOTATIONS = '/Annots'
-KEY_SUBTYPE = '/Subtype'
+KEY_ANNOTATIONS = "/Annots"
+KEY_SUBTYPE = "/Subtype"
 
-ANNOT_NAME = '/T'
-ANNOT_VALUE = '/V'
-ANNOT_RECT = '/Rect'
+ANNOT_NAME = "/T"
+ANNOT_VALUE = "/V"
+ANNOT_RECT = "/Rect"
 
-SUBTYPE_WIDGET = '/Widget'
+SUBTYPE_WIDGET = "/Widget"
