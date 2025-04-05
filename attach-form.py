@@ -3,22 +3,23 @@
 from typing import Optional
 
 import os
-import sys
+import click
 
 from reportlab.pdfgen import canvas
-from reportlab.lib.colors import transparent
+import reportlab.lib.colors as colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 
 from PyPDF4 import PdfFileWriter, PdfFileReader, pdf
 
 from core.settings import FormSettings
+from core.pdf_filler import fill_pdf
 
 FIELD_FLAG_MULTILINE = 'multiline'
 FIELD_FLAG_NO_SCROLL = 'doNotScroll'
 
 
-def create_form(settings: FormSettings, form_name: str, filename: str = 'simple_form.pdf'):
+def create_form(settings: FormSettings, form_name: str, filename: str = 'simple_form.pdf', debug: bool = False):
     c = canvas.Canvas(
         filename=filename,
         pagesize=A4,
@@ -26,15 +27,17 @@ def create_form(settings: FormSettings, form_name: str, filename: str = 'simple_
 
     c.setFont("Helvetica", 10)
 
-    default_border_width = 0
-    if os.environ.get("ATTACH_FORM_DEBUG", "0") == "1":
-        default_border_width = 1
-
     form_fields_settings = settings.form(form_name)
     form = c.acroForm
 
     for page_fields in form_fields_settings:
         for field in page_fields:
+            border_width = field.border_width if field.border_width else 0
+            border_color = field.border_color if field.border_color else "black"
+            if debug:
+                border_color = "red"
+                border_width = 2
+
             form.textfield(
                 name=field.name,
                 tooltip=field.tooltip,
@@ -43,8 +46,9 @@ def create_form(settings: FormSettings, form_name: str, filename: str = 'simple_
                 width=field.w * mm,
                 height=field.h,
                 maxlen=field.maxlen,
-                fillColor=transparent,
-                borderWidth=field.border_width if field.border_width else default_border_width,
+                fillColor=field.fill_color if field.fill_color else colors.transparent,
+                borderWidth=border_width,
+                borderColor=getattr(colors, border_color),
                 fontName=field.font_name,
                 fontSize=field.font_size,
                 fieldFlags=' '.join(field.flags),
@@ -100,34 +104,49 @@ def attach_form(original_document: str = 'original.pdf',
 def create_and_attach_form(settings: FormSettings,
                            form_name: str,
                            original_document: str,
-                           result_document: str):
+                           result_document: str,
+                           debug: bool = False):
 
     form_file = os.path.join(os.path.dirname(result_document), "form.pdf")
-    create_form(settings, form_name, form_file)
+    create_form(settings, form_name, form_file, debug)
     attach_form(original_document=original_document, form=form_file, result_document=result_document)
 
     os.remove(form_file)
 
+    if debug:
+        os.rename(result_document, form_file)
+        field_ids = settings.form_field_ids(form_name)
+        field_values = {field_id: field_id for field_id in field_ids}
+        fill_pdf(input_pdf=form_file,
+                 field_values=field_values,
+                 output_pdf=result_document)
 
-def main():
-    settings_file = sys.argv[1]
-    form_settings = FormSettings.from_file(settings_file)
 
-    form_name = sys.argv[2]
 
-    document = "./example.pdf"
-    if len(sys.argv) > 3:
-        document = sys.argv[3]
+@click.command()
+@click.option('--debug', 
+              is_flag=True, 
+              help="Debug mode. Makes all inputs to be visible and contain IDs.")
+@click.argument('form_definitions', required=True, type=click.Path(exists=True))
+@click.argument('form_name', required=True)
+@click.argument('original_document', required=True, type=click.Path(exists=True))
+@click.argument('result_document', required=False, type=click.Path(exists=False))
+@click.help_option('--help', '-h', help="Show this message and exit.")
+def cli(form_definitions, form_name, original_document, result_document, debug):
+    """Create and attach a PDF form to an existing document.
+    
+    This program takes a form definition file, creates a PDF form, and attaches it to
+    an existing PDF document. The result is saved as a new PDF file.
+    """
+    if result_document is None:
+        result_document = os.path.join(os.path.dirname(original_document), "result.pdf")
 
-    result = "./result.pdf"
-    if len(sys.argv) > 4:
-        result = sys.argv[4]
-
-    create_and_attach_form(settings=form_settings,
+    settings = FormSettings.from_file(form_definitions)
+    create_and_attach_form(settings=settings,
                            form_name=form_name,
-                           original_document=document,
-                           result_document=result)
-
+                           original_document=original_document,
+                           result_document=result_document,
+                           debug=debug)
 
 if __name__ == '__main__':
-    main()
+    cli()

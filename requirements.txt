@@ -1,5 +1,6 @@
-pdfrw==0.4
-Pillow==8.3.1
+pdfrw2==0.5.0
+Pillow==11.1.0
 PyPDF4==1.27.0
-PyYAML==5.4.1
-reportlab==3.5.68
+PyYAML==6.0.2
+reportlab==4.3.1
+click==8.1.8

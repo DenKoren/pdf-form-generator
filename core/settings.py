@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Union, BinaryIO, TextIO, AnyStr, Any
+from typing import List, Optional, Dict, Set, Union, BinaryIO, TextIO, AnyStr, Any
 
 import yaml
 
@@ -18,6 +18,8 @@ class FormField:
                  font_size: Optional[int] = None,
                  font_name: Optional[str] = None,
                  border_width: Optional[float] = None,
+                 border_color: Optional[str] = None,
+                 fill_color: Optional[str] = None,
                  field_type: Optional['FormField'] = None):
         self._name: Optional[str] = name
         self._x: Optional[float] = x
@@ -30,6 +32,8 @@ class FormField:
         self._font_size: Optional[int] = font_size
         self._font_name: Optional[str] = font_name
         self._border_width: Optional[float] = border_width
+        self._border_color: Optional[str] = border_color
+        self._fill_color: Optional[str] = fill_color
         self._field_type: Optional['FormField'] = field_type
 
     def _get_property(self, prop_name, default_val: Any) -> Any:
@@ -91,6 +95,14 @@ class FormField:
         return self._get_property('border_width', None)
 
     @property
+    def border_color(self) -> Optional[str]:
+        return self._get_property('border_color', None)
+
+    @property
+    def fill_color(self) -> Optional[str]:
+        return self._get_property('fill_color', None)
+
+    @property
     def field_type(self) -> Optional['FormField']:
         return self._field_type
 
@@ -131,6 +143,9 @@ class FormGroup:
             flags=field.flags,
             maxlen=field.maxlen,
             font_size=field.font_size,
+            border_width=field.border_width,
+            border_color=field.border_color,
+            fill_color=field.fill_color,
             field_type=field.field_type,
         )
 
@@ -333,6 +348,15 @@ class FormSettings:
             raise FormNotFound(name=form_name, file_path=self._settings_file)
 
         return self._forms[form_name]
+    
+    def form_field_ids(self, form_name: str) -> Set[str]:
+        form = self.form(form_name)
+        ids = set()
+        for page in form:
+            for field in page:
+                ids.add(field.name)
+
+        return ids
 
 
 class FieldValues:
