@@ -122,6 +122,10 @@ it has no visual editor and so on. You have to adjust fields configuration
 to original PDF document contents manually, but it is enough for some simple
 tasks and it is free :).
 
+Use `--grid` option when generating form to get info on coordinates you need.
+Use `--debug` option to show all input field IDs and draw them with red borders so
+you can see their size and location.
+
 I wrote it to make PDF modifications simpler: it is very annoying to redraw
 the full PDF form in an online PDF editor tool after small changes in
 original Mac OS X 'Pages' document or some other editor, that supports exporting to PDF,
