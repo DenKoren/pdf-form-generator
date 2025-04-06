@@ -218,16 +218,13 @@ source ./venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install pyinstaller
-./venv/bin/pyinstaller -F fill-form.py  # creates executable binary in ./dist
-./venv/bin/pyinstaller -F attach-form.py  # creates executable binary in ./dist
+./venv/bin/pyinstaller --paths "./venv/lib/pythonX/site-packages/" -F fill-form.py  # creates executable binary in ./dist
+./venv/bin/pyinstaller --paths "./venv/lib/pythonX/site-packages/" -F attach-form.py  # creates executable binary in ./dist
 ```
 
-Remember some servers mount TMP directory with 'noexec' flag, making impossible to execute binaries built with pyinstaller.
+Remember, some servers mount TMP directory with 'noexec' flag, making impossible to execute binaries built with pyinstaller.
 If you see errors like this
 ```
 error while loading shared libraries: libz.so.1: failed to map segment from shared object
 ```
-this is the case. Just make pyinstaller to make a bundle that puts bundled archive to another place, where execution is allowed, using `--runtime-tmpdir` option
-
-Also, pyinstaller does not detect venv location you're working with, loosing some dependencies while building, which may break bundled code.
-Provide `--paths` with a path to venv's lib directory (`venv/lib/pythonX/site-packages/`)
+this is the case. Just make pyinstaller to create a bundle that extracts archive to another place, where execution is allowed, using `--runtime-tmpdir` option (`--runtime-tmpdir ~/tmp`)
