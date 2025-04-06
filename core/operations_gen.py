@@ -1,15 +1,13 @@
-from typing import Dict, Optional, Union, BinaryIO, AnyStr
+from typing import Optional 
 
-import pdfrw
 from reportlab.pdfgen import canvas
 import reportlab.lib.colors as colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from PyPDF4 import PdfFileWriter, PdfFileReader, pdf
 
-from core import const
 from core.settings import FormSettings
-from core.grid import GridSettings, GridLineSettings, GridStep, draw_grid
+from core.grid import GridSettings, draw_grid
 
 
 def create_form(
@@ -103,45 +101,3 @@ def attach_form(
 
     with open(result_document, "wb") as out:
         result_writer.write(out)
-
-
-def fill_form(
-    input_pdf,
-    field_values: Optional[Dict] = None,
-    output_pdf: Union[BinaryIO, AnyStr] = None,
-):
-    if field_values is None:
-        field_values = {}
-
-    template_pdf: pdfrw.PdfReader = pdfrw.PdfReader(input_pdf)
-    page: pdfrw.PdfDict
-    for page in template_pdf.pages:
-        annotations: Optional[pdfrw.PdfArray] = page[const.KEY_ANNOTATIONS]
-        if annotations is None:
-            continue
-
-        for annotation in annotations:
-            if annotation[const.KEY_SUBTYPE] == const.SUBTYPE_WIDGET:
-
-                annotation_name = annotation.get(const.ANNOT_NAME)
-                if annotation_name is None:
-                    continue
-
-                annotation_name = (
-                    annotation_name.decode()
-                )  # restore original annotation name to make comparison work
-                value = field_values.get(annotation_name)
-
-                if value is None:
-                    continue
-
-                if type(value) == bool:
-                    if value:
-                        annotation.update(pdfrw.PdfDict(AS=pdfrw.PdfName("Yes")))
-                else:
-                    annotation.update(pdfrw.PdfDict(V=str(value), AP=""))
-
-    template_pdf.Root.AcroForm.update(
-        pdfrw.PdfDict(NeedAppearances=pdfrw.PdfObject("true"))
-    )
-    pdfrw.PdfWriter().write(output_pdf, template_pdf)
