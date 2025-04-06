@@ -129,7 +129,7 @@ class FormGroup:
         self, field: FormField, name: str = "", x: float = 0.0, y: float = 0.0
     ):
 
-        new_name = f"{name}-{field.name}"
+        new_name = f"{name}-{field.name}" if name else field.name
         new_x: float = x + field.x
         new_y: float = y + field.y
 

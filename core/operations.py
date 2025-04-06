@@ -9,6 +9,7 @@ from PyPDF4 import PdfFileWriter, PdfFileReader, pdf
 
 from core import const
 from core.settings import FormSettings
+from core.grid import GridSettings, GridLineSettings, GridStep, draw_grid
 
 
 def create_form(
@@ -16,6 +17,7 @@ def create_form(
     form_name: str,
     filename: str = "simple_form.pdf",
     debug: bool = False,
+    grid: GridSettings | None = None,
 ):
     c = canvas.Canvas(
         filename=filename,
@@ -28,6 +30,9 @@ def create_form(
     form = c.acroForm
 
     for page_fields in form_fields_settings:
+        if grid is not None:
+            draw_grid(c, grid)
+
         for field in page_fields:
             border_width = field.border_width if field.border_width else 0
             border_color = field.border_color if field.border_color else "black"

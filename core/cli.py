@@ -1,10 +1,12 @@
 from typing import Union, BinaryIO, AnyStr
 
 import os
+import sys
 import click
 
 from core.settings import FormSettings, FieldValues
 from core.operations import create_form, attach_form, fill_form
+from core.grid import DefaultGridSettings, GridSettings
 
 
 def _add_form_to_file(
@@ -13,9 +15,10 @@ def _add_form_to_file(
     original_document: str,
     result_document: str,
     debug: bool = False,
+    grid: GridSettings | None = None,
 ):
     form_file = os.path.join(os.path.dirname(result_document), "form.pdf")
-    create_form(settings, form_name, form_file, debug)
+    create_form(settings, form_name, form_file, debug, grid)
     attach_form(
         original_document=original_document,
         form=form_file,
@@ -39,20 +42,26 @@ def _add_form_to_file(
     is_flag=True,
     help="Debug mode. Makes all inputs to be visible and contain IDs.",
 )
+@click.option(
+    "--grid",
+    is_flag=True,
+    help="Add grid with coordinates to the form",
+)
 @click.argument("form_definitions", required=True, type=click.Path(exists=True))
 @click.argument("form_name", required=True, type=str)
 @click.argument(
     "form_file", required=False, type=click.Path(exists=False), default="form.pdf"
 )
 @click.help_option("--help", "-h", help="Show this message and exit.")
-def create(form_definitions, form_name, form_file, debug):
+def create(form_definitions, form_name, form_file, debug, grid):
     """Create an empty PDF form form form definitions file.
 
     This file can then be merged with another existing PDF with text to get fillable PDF file.
     """
     settings = FormSettings.from_file(form_definitions)
 
-    create_form(settings, form_name, form_file, debug)
+    grid_settings = DefaultGridSettings if grid else None
+    create_form(settings, form_name, form_file, debug, grid_settings)
 
 
 @click.command(name="attach")
@@ -61,12 +70,19 @@ def create(form_definitions, form_name, form_file, debug):
     is_flag=True,
     help="Debug mode. Makes all inputs to be visible and contain IDs.",
 )
+@click.option(
+    "--grid",
+    is_flag=True,
+    help="Add grid with coordinates to the form",
+)
 @click.argument("form_definitions", required=True, type=click.Path(exists=True))
 @click.argument("form_name", required=True)
 @click.argument("original_document", required=True, type=click.Path(exists=True))
 @click.argument("result_document", required=False, type=click.Path(exists=False))
 @click.help_option("--help", "-h", help="Show this message and exit.")
-def attach(form_definitions, form_name, original_document, result_document, debug):
+def attach(
+    form_definitions, form_name, original_document, result_document, debug, grid
+):
     """Create and attach a PDF form to an existing document.
 
     This program takes a form definition file, creates a PDF form, and attaches it to
@@ -75,13 +91,16 @@ def attach(form_definitions, form_name, original_document, result_document, debu
     if result_document is None:
         result_document = os.path.join(os.path.dirname(original_document), "result.pdf")
 
-    settings = FormSettings.from_file(form_definitions)
+    form_settings = FormSettings.from_file(form_definitions)
+    grid_settings = DefaultGridSettings if grid else None
+
     _add_form_to_file(
-        settings=settings,
+        settings=form_settings,
         form_name=form_name,
         original_document=original_document,
         result_document=result_document,
         debug=debug,
+        grid=grid_settings,
     )
 
 
