@@ -1,7 +1,7 @@
 # Do not update deps unless they are available in Python3.6
+click==8.0.4
 pdfrw2==0.5.0
 Pillow==8.4.0
 PyPDF4==1.27.0
 PyYAML==6.0.1
 reportlab==3.6.8
-click==8.0.4
